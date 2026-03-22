@@ -1,15 +1,13 @@
 package com.sbs.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.sbs.R;
+import com.sbs.SessionManager;
 import com.sbs.databinding.ActivitySignUpBinding;
 
 public class SignUpActivity extends AppCompatActivity {
@@ -18,6 +16,7 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
 
         binding = ActivitySignUpBinding.inflate(getLayoutInflater());
@@ -39,19 +38,18 @@ public class SignUpActivity extends AppCompatActivity {
                 return;
             }
 
-            Toast.makeText(this, "Sign up UI ready", Toast.LENGTH_SHORT).show();
+            SessionManager sessionManager = new SessionManager(this);
+            sessionManager.setLoggedIn(true);
+
+            Intent intent = new Intent(SignUpActivity.this, DashboardActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
         });
 
         binding.tvBackToLogin.setOnClickListener(v -> finish());
 
         binding.tvNeedHelp.setOnClickListener(v ->
-                Toast.makeText(this, "Help flow not implemented yet", Toast.LENGTH_SHORT).show());
-
-
-//        ViewCompat.setOnApplyWindowInsetsListener(binding.main, (v, insets) -> {
-//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-//            return insets;
-//        });
+                Toast.makeText(this, "Help may not get a filler arc, yet!", Toast.LENGTH_SHORT).show());
     }
 }
