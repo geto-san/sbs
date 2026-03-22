@@ -47,4 +47,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    // ML Kit on-device image labeling
+    implementation("com.google.mlkit:image-labeling:17.0.9")
 }
