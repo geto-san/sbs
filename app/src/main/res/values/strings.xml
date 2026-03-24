@@ -14,4 +14,13 @@
     <string name="profile">Profile</string>
     <string name="go_back">Go back</string>
     <string name="selected_image_preview">Selected image preview</string>
+    <string name="my_location">My location</string>
+    <string name="email">Email</string>
+    <string name="full_name">Full Name</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="already_have_an_account">Already have an account? </string>
+    <string name="log_in_dot">Log In.</string>
+    <string name="network_online">Online</string>
+    <string name="network_offline">Offline - No internet access</string>
+    <string name="network_airplane_mode">Airplane mode on</string>
 </resources>
