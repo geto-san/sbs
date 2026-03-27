@@ -6,7 +6,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="?attr/screenBackground"
     tools:context=".ui.WelcomeActivity">
 
     <TextView
@@ -16,7 +16,7 @@
         android:layout_marginTop="160dp"
         android:fontFamily="cursive"
         android:text="Silver Back Sentry"
-        android:textColor="@color/primaryTextColor"
+        android:textColor="?attr/primaryTextColor"
         android:textSize="48sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -32,7 +32,7 @@
         android:layout_marginEnd="40dp"
         android:gravity="center"
         android:text="The intelligent way to protect and monitor our wildlife."
-        android:textColor="@color/secondaryTextColor"
+        android:textColor="?attr/secondaryTextColor"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -73,15 +73,11 @@
 
         <Button
             android:id="@+id/btnSignUp"
-            style="@style/InstagramButton"
+            style="@style/InstagramButton.Outline"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_marginTop="12dp"
-            android:backgroundTint="@color/white"
-            android:text="Sign Up"
-            android:textColor="@color/ig_blue"
-            app:strokeColor="@color/ig_light_grey"
-            app:strokeWidth="1dp" />
+            android:text="Sign Up" />
 
     </LinearLayout>
 

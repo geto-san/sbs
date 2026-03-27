@@ -4,18 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
-
-    <TextView
-        android:id="@+id/tvNetworkStatus"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="4dp"
-        android:textColor="@android:color/white"
-        android:textSize="12sp"
-        android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent" />
+    android:background="?attr/screenBackground">
 
     <TextView
         android:id="@+id/tvLogo"
@@ -24,12 +13,12 @@
         android:layout_marginTop="100dp"
         android:fontFamily="cursive"
         android:text="Silver Back Sentry"
-        android:textColor="@color/primaryTextColor"
+        android:textColor="?attr/primaryTextColor"
         android:textSize="48sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvNetworkStatus" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/formContainer"
@@ -58,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Password"
+            android:hint="@string/password"
             android:inputType="textPassword"
             android:autofillHints="password"/>
 
@@ -70,6 +59,17 @@
             android:layout_marginTop="20dp"
             android:text="Log In" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGoogleSignIn"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:text="Sign in with Google"
+            android:textAllCaps="false"
+            app:icon="@android:drawable/ic_menu_compass"
+            app:strokeColor="?attr/dividerColor" />
+
         <TextView
             android:id="@+id/tvNeedHelp"
             android:layout_width="wrap_content"
@@ -77,7 +77,7 @@
             android:layout_gravity="center"
             android:layout_marginTop="16dp"
             android:text="Forgot password?"
-            android:textColor="@color/ig_blue"
+            android:textColor="?attr/colorSecondary"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -95,7 +95,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Don't have an account? "
-            android:textColor="@color/ig_grey"
+            android:textColor="?attr/secondaryTextColor"
             android:textSize="12sp" />
 
         <TextView
@@ -103,7 +103,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sign Up."
-            android:textColor="@color/ig_blue"
+            android:textColor="?attr/colorSecondary"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>

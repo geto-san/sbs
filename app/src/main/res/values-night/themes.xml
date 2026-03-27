@@ -1,77 +1,51 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="Theme.Sbs" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/black</item>
-        <item name="colorPrimaryVariant">@color/black</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimary">@color/sbs_button_primary_bg</item>
+        <item name="colorPrimaryVariant">@color/sbs_button_primary_bg</item>
+        <item name="colorOnPrimary">@color/sbs_button_primary_text</item>
 
         <item name="colorSecondary">@color/ig_blue</item>
         <item name="colorSecondaryVariant">@color/ig_blue</item>
-        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorOnSecondary">@color/sbs_button_primary_text</item>
 
-        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:colorBackground">@color/sbs_screen</item>
+        <item name="colorOnBackground">@color/sbs_text_primary</item>
+        <item name="colorSurface">@color/sbs_surface</item>
+        <item name="colorOnSurface">@color/sbs_text_primary</item>
+        <item name="colorControlNormal">@color/sbs_input_stroke</item>
+        <item name="colorControlActivated">@color/ig_blue</item>
+        <item name="colorControlHighlight">@color/ig_blue</item>
+        <item name="android:textColorHint">@color/sbs_text_hint</item>
+
+        <item name="android:statusBarColor">@color/sbs_toolbar_bg</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowBackground">?attr/screenBackground</item>
 
         <!-- Global screen colors -->
-        <item name="screenBackground">@color/black</item>
-        <item name="toolbarBackground">@android:color/transparent</item>
-        <item name="primaryTextColor">@color/white</item>
-        <item name="secondaryTextColor">#B3FFFFFF</item>
-        <item name="dividerColor">#26FFFFFF</item>
-        <item name="iconTintColor">@color/white</item>
-        <item name="previewSurfaceColor">#121212</item>
+        <item name="screenBackground">@color/sbs_screen</item>
+        <item name="surfaceBackground">@color/sbs_surface</item>
+        <item name="toolbarBackground">@color/sbs_toolbar_bg</item>
+        <item name="primaryTextColor">@color/sbs_text_primary</item>
+        <item name="secondaryTextColor">@color/sbs_text_secondary</item>
+        <item name="hintTextColor">@color/sbs_text_hint</item>
+        <item name="dividerColor">@color/sbs_divider</item>
+        <item name="iconTintColor">@color/sbs_icon</item>
+        <item name="previewSurfaceColor">@color/sbs_preview_surface</item>
+        <item name="inputBackground">@color/sbs_input</item>
+        <item name="inputStrokeColor">@color/sbs_input_stroke</item>
+        <item name="buttonPrimaryBackground">@color/sbs_button_primary_bg</item>
+        <item name="buttonPrimaryText">@color/sbs_button_primary_text</item>
+        <item name="buttonSecondaryBackground">@color/sbs_button_secondary_bg</item>
+        <item name="buttonSecondaryText">@color/sbs_button_secondary_text</item>
+        <item name="avatarPlaceholderColor">@color/sbs_avatar_placeholder</item>
 
         <!-- Drawer/menu -->
-        <item name="menuBackground">@color/black</item>
-        <item name="menuTextColor">@color/white</item>
-        <item name="menuSecondaryTextColor">#B3FFFFFF</item>
-        <item name="menuIconTint">@color/white</item>
-        <item name="menuDividerColor">#26FFFFFF</item>
-    </style>
-
-    <style name="DashboardMenuItem">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">56dp</item>
-        <item name="android:paddingStart">24dp</item>
-        <item name="android:paddingEnd">24dp</item>
-        <item name="android:paddingTop">16dp</item>
-        <item name="android:paddingBottom">16dp</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="android:background">?attr/selectableItemBackground</item>
-    </style>
-
-    <style name="DashboardMenuIcon">
-        <item name="android:layout_width">22dp</item>
-        <item name="android:layout_height">22dp</item>
-        <item name="android:layout_centerVertical">true</item>
-        <item name="android:layout_alignParentStart">true</item>
-        <item name="android:tint">?attr/menuIconTint</item>
-        <item name="android:alpha">0.92</item>
-    </style>
-
-    <style name="DashboardMenuText">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_centerVertical">true</item>
-        <item name="android:layout_marginStart">16dp</item>
-        <item name="android:textColor">?attr/menuTextColor</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:letterSpacing">0.06</item>
-        <item name="android:textAllCaps">true</item>
-    </style>
-
-    <style name="DashboardUserName">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">8dp</item>
-        <item name="android:layout_marginStart">24dp</item>
-        <item name="android:layout_marginBottom">24dp</item>
-        <item name="android:textColor">?attr/menuSecondaryTextColor</item>
-        <item name="android:textSize">14sp</item>
+        <item name="menuBackground">@color/sbs_surface</item>
+        <item name="menuTextColor">@color/sbs_text_primary</item>
+        <item name="menuSecondaryTextColor">@color/sbs_text_secondary</item>
+        <item name="menuIconTint">@color/sbs_icon</item>
+        <item name="menuDividerColor">@color/sbs_divider</item>
     </style>
 
     <style name="ShapeAppearanceOverlay.App.CircularAvatar" parent="">

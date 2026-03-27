@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="?attr/screenBackground"
     tools:context=".ui.SignUpActivity">
 
     <TextView
@@ -26,7 +26,7 @@
         android:layout_marginTop="100dp"
         android:fontFamily="cursive"
         android:text="@string/silver_back_sentry"
-        android:textColor="@color/primaryTextColor"
+        android:textColor="?attr/primaryTextColor"
         android:textSize="48sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -96,7 +96,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/already_have_an_account"
-            android:textColor="@color/ig_grey"
+            android:textColor="?attr/secondaryTextColor"
             android:textSize="12sp" />
 
         <TextView
@@ -104,7 +104,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/log_in_dot"
-            android:textColor="@color/ig_blue"
+            android:textColor="?attr/colorSecondary"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
