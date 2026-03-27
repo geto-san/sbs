@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -21,7 +22,7 @@ import com.sbs.data.SightingSyncManager;
 public class SettingsActivity extends BaseActivity {
 
     private AutoCompleteTextView actThemeMode;
-    private SwitchMaterial switchAutoSync;
+    private MaterialButtonToggleGroup toggleSyncMode;
     private SwitchMaterial switchWifiOnlySync;
     private SwitchMaterial switchAutoCenterMap;
     private SwitchMaterial switchShowSampleMarkers;
@@ -42,7 +43,7 @@ public class SettingsActivity extends BaseActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         actThemeMode = findViewById(R.id.actThemeMode);
-        switchAutoSync = findViewById(R.id.switchAutoSync);
+        toggleSyncMode = findViewById(R.id.toggleSyncMode);
         switchWifiOnlySync = findViewById(R.id.switchWifiOnlySync);
         switchAutoCenterMap = findViewById(R.id.switchAutoCenterMap);
         switchShowSampleMarkers = findViewById(R.id.switchShowSampleMarkers);
@@ -71,7 +72,11 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void bindSavedValues() {
-        switchAutoSync.setChecked(appSettingsManager.isAutoSyncEnabled());
+        if (appSettingsManager.isAutoSyncEnabled()) {
+            toggleSyncMode.check(R.id.btnSyncAuto);
+        } else {
+            toggleSyncMode.check(R.id.btnSyncManual);
+        }
         switchWifiOnlySync.setChecked(appSettingsManager.isWifiOnlySyncEnabled());
         switchAutoCenterMap.setChecked(appSettingsManager.isAutoCenterMapEnabled());
         switchShowSampleMarkers.setChecked(appSettingsManager.isShowSampleMarkersEnabled());
@@ -100,8 +105,10 @@ public class SettingsActivity extends BaseActivity {
             appSettingsManager.applyTheme();
         });
 
-        switchAutoSync.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            appSettingsManager.setAutoSyncEnabled(isChecked);
+        toggleSyncMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            boolean auto = checkedId == R.id.btnSyncAuto;
+            appSettingsManager.setAutoSyncEnabled(auto);
             updateSyncUI();
         });
 
@@ -116,7 +123,7 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void updateSyncUI() {
-        boolean autoSync = switchAutoSync.isChecked();
+        boolean autoSync = appSettingsManager.isAutoSyncEnabled();
         btnSyncNowGlobal.setVisibility(autoSync ? View.GONE : View.VISIBLE);
         switchWifiOnlySync.setEnabled(autoSync);
         switchWifiOnlySync.setAlpha(autoSync ? 1f : 0.5f);

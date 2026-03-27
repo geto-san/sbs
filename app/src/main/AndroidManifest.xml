@@ -36,10 +36,7 @@
             android:name=".ui.SightingEditorActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.HealthObservationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.SyncStatusActivity"
+            android:name=".ui.PatrolLogsActivity"
             android:exported="false" />
         <activity
             android:name=".ui.DeviceInfoActivity"
@@ -65,10 +62,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ui.ImageClassifierActivity"
-            android:exported="false" />
 
         <service
             android:name=".notifications.SbsFirebaseMessagingService"

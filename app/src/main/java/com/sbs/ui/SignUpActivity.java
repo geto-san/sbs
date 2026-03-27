@@ -6,11 +6,24 @@ import android.text.TextUtils;
 import android.util.Patterns;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
+import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.sbs.R;
 import com.sbs.databinding.ActivitySignUpBinding;
 import com.sbs.notifications.FcmTokenManager;
 
@@ -21,6 +34,23 @@ public class SignUpActivity extends BaseActivity {
     private ActivitySignUpBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private GoogleSignInClient googleSignInClient;
+    private final ActivityResultLauncher<Intent> googleLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getData() == null) {
+                    Toast.makeText(this, "Google sign-up cancelled.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                try {
+                    GoogleSignInAccount account = task.getResult(ApiException.class);
+                    if (account != null) {
+                        firebaseAuthWithGoogle(account);
+                    }
+                } catch (ApiException e) {
+                    Toast.makeText(this, "Google sign-up failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +66,13 @@ public class SignUpActivity extends BaseActivity {
 
         binding.btnSignUp.setOnClickListener(v -> attemptSignUp());
         binding.tvBackToLogin.setOnClickListener(v -> finish());
+        binding.btnGoogleSignUp.setOnClickListener(v -> startGoogleSignIn());
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
     }
 
     private void attemptSignUp() {
@@ -133,5 +170,37 @@ public class SignUpActivity extends BaseActivity {
             return "An account already exists for this email.";
         }
         return "Sign up failed. Please try again.";
+    }
+
+    private void startGoogleSignIn() {
+        Intent signInIntent = googleSignInClient.getSignInIntent();
+        googleLauncher.launch(signInIntent);
+    }
+
+    private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
+        AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            saveGoogleUserToFirestore(user);
+                        }
+                        FcmTokenManager.syncCurrentToken(this);
+                        navigateToDashboard();
+                    } else {
+                        Toast.makeText(this, "Google sign-up failed. Please try again.", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void saveGoogleUserToFirestore(FirebaseUser user) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("fullName", user.getDisplayName() != null ? user.getDisplayName() : "");
+        data.put("email", user.getEmail() != null ? user.getEmail() : "");
+        data.put("createdAt", System.currentTimeMillis());
+
+        db.collection("users").document(user.getUid())
+                .set(data, com.google.firebase.firestore.SetOptions.merge());
     }
 }

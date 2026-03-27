@@ -4,16 +4,11 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -28,24 +23,20 @@ import androidx.core.view.WindowInsetsCompat;
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.sbs.R;
 import com.sbs.SessionManager;
 import com.sbs.data.AppSettingsManager;
 import com.sbs.data.SightingRecord;
 import com.sbs.data.SightingStore;
-import com.sbs.data.SightingSyncManager;
 import com.sbs.databinding.ActivityDashboardBinding;
 import com.sbs.notifications.FcmTokenManager;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.events.MapEventsReceiver;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.CustomZoomButtonsDisplay;
-import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
@@ -57,8 +48,8 @@ public class DashboardActivity extends BaseActivity {
     private ActivityDashboardBinding binding;
     private MyLocationNewOverlay locationOverlay;
     private boolean restoredMapState = false;
-    private boolean lastNetworkOnline = false;
     private final List<Marker> savedSightingMarkers = new ArrayList<>();
+    private boolean actionMenuOpen = false;
 
     private static final String PREFS_DASHBOARD_STATE = "sbs_dashboard_state";
     private static final String KEY_MAP_LAT = "map_lat";
@@ -137,7 +128,6 @@ public class DashboardActivity extends BaseActivity {
 
         setupMap();
         setupMyLocationOverlay();
-        setupMapInteractions();
         renderStoredSightings();
 
         if (appSettingsManager.isShowSampleMarkersEnabled()) {
@@ -211,6 +201,7 @@ public class DashboardActivity extends BaseActivity {
         GeoPoint defaultCenter = new GeoPoint(-1.0522, 29.6201);
         mapController.setZoom(14.5);
         mapController.setCenter(defaultCenter);
+
     }
 
     private void setupMyLocationOverlay() {
@@ -221,59 +212,11 @@ public class DashboardActivity extends BaseActivity {
         }
     }
 
-    private void setupMapInteractions() {
-        MapEventsReceiver receiver = new MapEventsReceiver() {
-            @Override
-            public boolean singleTapConfirmedHelper(GeoPoint p) {
-                return false;
-            }
-
-            @Override
-            public boolean longPressHelper(GeoPoint p) {
-                showRecordPopup(p, binding.mapView);
-                return true;
-            }
-        };
-        binding.mapView.getOverlays().add(new MapEventsOverlay(receiver));
-    }
-
-    private void showRecordPopup(GeoPoint point, View anchor) {
-        View popupView = LayoutInflater.from(this).inflate(R.layout.popup_record_options, null);
-        PopupWindow popupWindow = new PopupWindow(popupView, 
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 
-                android.view.ViewGroup.LayoutParams.WRAP_CONTENT, true);
-
-        popupView.findViewById(R.id.btnRecordSighting).setOnClickListener(v -> {
-            popupWindow.dismiss();
-            openSightingEditor(point);
-        });
-        popupView.findViewById(R.id.btnRecordHealth).setOnClickListener(v -> {
-            popupWindow.dismiss();
-            openHealthEditor(point);
-        });
-        popupView.findViewById(R.id.btnRecordPatrol).setOnClickListener(v -> {
-            popupWindow.dismiss();
-            openPatrolEditor(point);
-        });
-
-        popupWindow.showAtLocation(anchor, android.view.Gravity.CENTER, 0, 0);
-    }
-
     private void openSightingEditor(GeoPoint point) {
         Intent intent = new Intent(this, SightingEditorActivity.class);
         intent.putExtra("lat", point.getLatitude());
         intent.putExtra("lng", point.getLongitude());
         recordEditorLauncher.launch(intent);
-    }
-
-    private void openHealthEditor(GeoPoint point) {
-        // To be implemented
-        Toast.makeText(this, "Health Observation Editor", Toast.LENGTH_SHORT).show();
-    }
-
-    private void openPatrolEditor(GeoPoint point) {
-        // To be implemented
-        Toast.makeText(this, "Patrol Log Editor", Toast.LENGTH_SHORT).show();
     }
 
     private void loadSampleSightings() {
@@ -341,14 +284,17 @@ public class DashboardActivity extends BaseActivity {
     private void setupClickListeners() {
         binding.btnMenuToggle.setOnClickListener(v -> openMenu());
         binding.btnMenuClose.setOnClickListener(v -> hideMenu());
-        binding.btnMyLocation.setOnClickListener(v -> {
-            if (hasLocationPermissions() && locationOverlay != null) {
-                GeoPoint myLoc = locationOverlay.getMyLocation();
-                if (myLoc != null) showRecordPopup(myLoc, binding.mapView);
-                else centerMapOnUser();
-            } else {
-                requestLocationPermissions();
-            }
+        binding.btnMyLocation.setOnClickListener(v -> toggleActionMenu());
+        binding.actionMenuScrim.setOnClickListener(v -> closeActionMenu());
+        View.OnClickListener sightingClick = v -> {
+            closeActionMenu();
+            GeoPoint loc = resolveCurrentLocation();
+            if (loc != null) openSightingEditor(loc);
+        };
+        binding.actionSighting.setOnClickListener(sightingClick);
+        binding.actionCenterMap.setOnClickListener(v -> {
+            closeActionMenu();
+            centerMapOnUser();
         });
         binding.menuNewSighting.setOnClickListener(v -> {
             hideMenu();
@@ -374,7 +320,6 @@ public class DashboardActivity extends BaseActivity {
             startActivity(intent);
             finish();
         });
-        binding.btnIdentifyImage.setOnClickListener(v -> startActivity(new Intent(this, ImageClassifierActivity.class)));
     }
 
     private void bindCurrentUserFooter() {
@@ -435,15 +380,48 @@ public class DashboardActivity extends BaseActivity {
         if (locationOverlay != null) locationOverlay.disableMyLocation();
     }
 
-    @Override
-    public void onStatusChanged(boolean isOnline, boolean isAirplaneModeOn) {
-        super.onStatusChanged(isOnline, isAirplaneModeOn);
-        if (isOnline && !lastNetworkOnline) {
-            SightingSyncManager.syncAllPending(this);
-        }
-        lastNetworkOnline = isOnline;
-    }
-
     private void openMenu() { binding.drawerLayout.openDrawer(GravityCompat.START); }
     private void hideMenu() { binding.drawerLayout.closeDrawer(GravityCompat.START); }
+
+    private void toggleActionMenu() {
+        if (actionMenuOpen) {
+            closeActionMenu();
+        } else {
+            openActionMenu();
+        }
+    }
+
+    private void openActionMenu() {
+        actionMenuOpen = true;
+        binding.actionMenuScrim.setVisibility(View.VISIBLE);
+        binding.actionMenuContainer.setVisibility(View.VISIBLE);
+        binding.actionMenuContainer.setAlpha(0f);
+        binding.actionMenuContainer.animate().alpha(1f).setDuration(160).start();
+        binding.btnMyLocation.animate().rotation(45f).setDuration(160).start();
+    }
+
+    private void closeActionMenu() {
+        actionMenuOpen = false;
+        binding.actionMenuScrim.setVisibility(View.GONE);
+        binding.actionMenuContainer.setVisibility(View.GONE);
+        binding.btnMyLocation.animate().rotation(0f).setDuration(160).start();
+    }
+
+    private GeoPoint resolveCurrentLocation() {
+        if (!hasLocationPermissions()) {
+            requestLocationPermissions();
+            Toast.makeText(this, "Location permission required", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+        if (locationOverlay == null) {
+            enableMyLocation();
+            Toast.makeText(this, "Fetching location…", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+        GeoPoint myLoc = locationOverlay.getMyLocation();
+        if (myLoc == null) {
+            Toast.makeText(this, "Waiting for location fix", Toast.LENGTH_SHORT).show();
+        }
+        return myLoc;
+    }
 }

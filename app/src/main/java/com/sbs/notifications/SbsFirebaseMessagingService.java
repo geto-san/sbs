@@ -17,8 +17,6 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.sbs.R;
 import com.sbs.ui.DashboardActivity;
-import com.sbs.ui.HealthObservationActivity;
-import com.sbs.ui.SyncStatusActivity;
 
 public class SbsFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -115,15 +113,6 @@ public class SbsFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private Intent buildIntentForType(String type) {
-        switch (type) {
-            case "health_observation":
-                return new Intent(this, HealthObservationActivity.class);
-            case "sync_success":
-            case "sync_failed":
-                return new Intent(this, SyncStatusActivity.class);
-            case "new_sighting":
-            default:
-                return new Intent(this, DashboardActivity.class);
-        }
+        return new Intent(this, DashboardActivity.class);
     }
 }

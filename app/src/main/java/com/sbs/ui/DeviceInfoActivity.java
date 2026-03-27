@@ -1,13 +1,8 @@
 package com.sbs.ui;
 
 import android.app.ActivityManager;
-import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -19,29 +14,21 @@ import com.sbs.R;
 
 import java.util.Locale;
 
-public class DeviceInfoActivity extends BaseActivity implements SensorEventListener {
-
-    private SensorManager sensorManager;
-    private Sensor accelerometer, gyroscope, lightSensor;
-    
-    // Live sensor TextViews
-    private TextView tvLiveAccel, tvLiveGyro, tvLiveLight;
+public class DeviceInfoActivity extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_info);
+        applyWindowInsets(findViewById(R.id.deviceInfoRoot));
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
-
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         setupDeviceOverview();
         setupCpuDiagnostics();
         setupRamDiagnostics();
         setupSensorDiagnostics();
-        setupLiveSensors();
     }
 
     private void setupDeviceOverview() {
@@ -78,81 +65,29 @@ public class DeviceInfoActivity extends BaseActivity implements SensorEventListe
         LinearLayout container = findViewById(R.id.sensorContainer);
         container.removeAllViews();
 
-        int[] sensorTypes = {
-                Sensor.TYPE_ACCELEROMETER, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_MAGNETIC_FIELD,
-                Sensor.TYPE_PROXIMITY, Sensor.TYPE_LIGHT, Sensor.TYPE_PRESSURE,
-                Sensor.TYPE_STEP_COUNTER, Sensor.TYPE_STEP_DETECTOR, Sensor.TYPE_ROTATION_VECTOR,
-                Sensor.TYPE_GRAVITY, Sensor.TYPE_LINEAR_ACCELERATION, Sensor.TYPE_AMBIENT_TEMPERATURE,
-                Sensor.TYPE_RELATIVE_HUMIDITY
-        };
-
-        String[] sensorNames = {
-                "Accelerometer", "Gyroscope", "Magnetometer",
-                "Proximity Sensor", "Light Sensor", "Pressure / Barometer",
-                "Step Counter", "Step Detector", "Rotation Vector",
-                "Gravity Sensor", "Linear Acceleration", "Ambient Temperature",
-                "Relative Humidity"
-        };
-
-        for (int i = 0; i < sensorTypes.length; i++) {
-            Sensor s = sensorManager.getDefaultSensor(sensorTypes[i]);
-            addSensorRow(container, sensorNames[i], s);
-        }
+        PackageManager pm = getPackageManager();
+        addCapabilityRow(container, "GPS / Location", pm.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS));
+        addCapabilityRow(container, "Camera", pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY));
+        addCapabilityRow(container, "Microphone", pm.hasSystemFeature(PackageManager.FEATURE_MICROPHONE));
     }
 
-    private void addSensorRow(LinearLayout container, String name, Sensor s) {
+    private void addCapabilityRow(LinearLayout container, String name, boolean available) {
         View row = getLayoutInflater().inflate(R.layout.row_diagnostic, container, false);
         TextView tvLabel = row.findViewById(R.id.tvLabel);
         TextView tvValue = row.findViewById(R.id.tvValue);
         TextView tvSubValue = row.findViewById(R.id.tvSubValue);
 
         tvLabel.setText(name);
-        if (s != null) {
+        if (available) {
             tvValue.setText("Available");
             tvValue.setTextColor(getResources().getColor(android.R.color.holo_green_dark, getTheme()));
-            tvSubValue.setText(String.format("%s (v%d)", s.getVendor(), s.getVersion()));
-            tvSubValue.setVisibility(View.VISIBLE);
+            tvSubValue.setVisibility(View.GONE);
         } else {
             tvValue.setText("Not Available");
             tvValue.setTextColor(getResources().getColor(android.R.color.holo_red_dark, getTheme()));
+            tvSubValue.setVisibility(View.GONE);
         }
         container.addView(row);
-    }
-
-    private void setupLiveSensors() {
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-
-        boolean anyLive = false;
-
-        if (accelerometer != null) {
-            setRowData(R.id.rowLiveAccel, "Live Accelerometer", "Waiting for data...");
-            tvLiveAccel = findViewById(R.id.rowLiveAccel).findViewById(R.id.tvValue);
-            anyLive = true;
-        } else {
-            findViewById(R.id.rowLiveAccel).setVisibility(View.GONE);
-        }
-
-        if (gyroscope != null) {
-            setRowData(R.id.rowLiveGyro, "Live Gyroscope", "Waiting for data...");
-            tvLiveGyro = findViewById(R.id.rowLiveGyro).findViewById(R.id.tvValue);
-            anyLive = true;
-        } else {
-            findViewById(R.id.rowLiveGyro).setVisibility(View.GONE);
-        }
-
-        if (lightSensor != null) {
-            setRowData(R.id.rowLiveLight, "Live Light Sensor", "Waiting for data...");
-            tvLiveLight = findViewById(R.id.rowLiveLight).findViewById(R.id.tvValue);
-            anyLive = true;
-        } else {
-            findViewById(R.id.rowLiveLight).setVisibility(View.GONE);
-        }
-
-        if (!anyLive) {
-            findViewById(R.id.cardLiveSensors).setVisibility(View.GONE);
-        }
     }
 
     private void setRowData(int layoutId, String label, String value) {
@@ -169,32 +104,4 @@ public class DeviceInfoActivity extends BaseActivity implements SensorEventListe
             return "Unknown";
         }
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (accelerometer != null) sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
-        if (gyroscope != null) sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI);
-        if (lightSensor != null) sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_UI);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        sensorManager.unregisterListener(this);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER && tvLiveAccel != null) {
-            tvLiveAccel.setText(String.format(Locale.US, "X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]));
-        } else if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE && tvLiveGyro != null) {
-            tvLiveGyro.setText(String.format(Locale.US, "X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]));
-        } else if (event.sensor.getType() == Sensor.TYPE_LIGHT && tvLiveLight != null) {
-            tvLiveLight.setText(String.format(Locale.US, "%.1f lx", event.values[0]));
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 }

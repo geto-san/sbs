@@ -89,12 +89,29 @@
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/switchAutoSync"
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleSyncMode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Enable automatic sync" />
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSyncManual"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/manual" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSyncAuto"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/automatic" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <Button
                         android:id="@+id/btnSyncNowGlobal"
