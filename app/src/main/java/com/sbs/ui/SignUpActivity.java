@@ -24,6 +24,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.sbs.R;
+import com.sbs.data.AppRepository;
+import com.sbs.data.SyncScheduler;
 import com.sbs.databinding.ActivitySignUpBinding;
 import com.sbs.notifications.FcmTokenManager;
 
@@ -145,6 +147,8 @@ public class SignUpActivity extends BaseActivity {
         db.collection("users").document(userId)
                 .set(user)
                 .addOnSuccessListener(aVoid -> {
+                    AppRepository.getInstance(this).upsertCurrentRanger();
+                    SyncScheduler.scheduleConfiguredSync(this);
                     Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
                     FcmTokenManager.syncCurrentToken(this);
                     navigateToDashboard();
@@ -186,6 +190,8 @@ public class SignUpActivity extends BaseActivity {
                         if (user != null) {
                             saveGoogleUserToFirestore(user);
                         }
+                        AppRepository.getInstance(this).upsertCurrentRanger();
+                        SyncScheduler.scheduleConfiguredSync(this);
                         FcmTokenManager.syncCurrentToken(this);
                         navigateToDashboard();
                     } else {

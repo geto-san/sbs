@@ -7,22 +7,37 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.sbs.R;
 import com.sbs.data.AppSettingsManager;
 import com.sbs.data.PatrolLogRecord;
-import com.sbs.data.PatrolLogStore;
+import com.sbs.data.SyncState;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
-public class PatrolLogsAdapter extends RecyclerView.Adapter<PatrolLogsAdapter.LogViewHolder> {
+public class PatrolLogsAdapter extends ListAdapter<PatrolLogRecord, PatrolLogsAdapter.LogViewHolder> {
 
-    private final List<PatrolLogRecord> logs = new ArrayList<>();
+    private static final DiffUtil.ItemCallback<PatrolLogRecord> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<PatrolLogRecord>() {
+                @Override
+                public boolean areItemsTheSame(@NonNull PatrolLogRecord oldItem, @NonNull PatrolLogRecord newItem) {
+                    return oldItem.localId.equals(newItem.localId);
+                }
+
+                @Override
+                public boolean areContentsTheSame(@NonNull PatrolLogRecord oldItem, @NonNull PatrolLogRecord newItem) {
+                    return oldItem.timestamp == newItem.timestamp
+                            && safeEquals(oldItem.title, newItem.title)
+                            && safeEquals(oldItem.notes, newItem.notes)
+                            && safeEquals(oldItem.syncStatus, newItem.syncStatus);
+                }
+            };
+
     private final AppSettingsManager appSettingsManager;
     private final LogActionListener actionListener;
 
@@ -33,14 +48,9 @@ public class PatrolLogsAdapter extends RecyclerView.Adapter<PatrolLogsAdapter.Lo
     }
 
     public PatrolLogsAdapter(AppSettingsManager appSettingsManager, LogActionListener actionListener) {
+        super(DIFF_CALLBACK);
         this.appSettingsManager = appSettingsManager;
         this.actionListener = actionListener;
-    }
-
-    public void submitList(List<PatrolLogRecord> records) {
-        logs.clear();
-        if (records != null) logs.addAll(records);
-        notifyDataSetChanged();
     }
 
     @NonNull
@@ -52,11 +62,11 @@ public class PatrolLogsAdapter extends RecyclerView.Adapter<PatrolLogsAdapter.Lo
 
     @Override
     public void onBindViewHolder(@NonNull LogViewHolder holder, int position) {
-        holder.bind(logs.get(position));
+        holder.bind(getItem(position));
     }
 
     @Override
-    public int getItemCount() { return logs.size(); }
+    public int getItemCount() { return getCurrentList().size(); }
 
     class LogViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvTitle, tvAuthor, tvNotes, tvTimestamp, tvStatus;
@@ -88,7 +98,7 @@ public class PatrolLogsAdapter extends RecyclerView.Adapter<PatrolLogsAdapter.Lo
 
             if (isAuthor) {
                 layoutActions.setVisibility(View.VISIBLE);
-                btnSyncNow.setVisibility(!PatrolLogStore.STATUS_SYNCED.equals(record.syncStatus) 
+                btnSyncNow.setVisibility(!SyncState.SYNCED.equals(record.syncStatus)
                         && !appSettingsManager.isAutoSyncEnabled() ? View.VISIBLE : View.GONE);
                 
                 btnSyncNow.setOnClickListener(v -> actionListener.onSyncNow(record));
@@ -100,9 +110,13 @@ public class PatrolLogsAdapter extends RecyclerView.Adapter<PatrolLogsAdapter.Lo
         }
 
         private String formatStatus(String status) {
-            if (PatrolLogStore.STATUS_SYNCED.equals(status)) return "Synced";
-            if (PatrolLogStore.STATUS_FAILED.equals(status)) return "Sync Failed";
+            if (SyncState.SYNCED.equals(status)) return "Synced";
+            if (SyncState.FAILED.equals(status)) return "Sync Failed";
             return "Not Synced";
         }
+    }
+
+    private static boolean safeEquals(String left, String right) {
+        return left == null ? right == null : left.equals(right);
     }
 }

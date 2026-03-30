@@ -7,24 +7,42 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.sbs.R;
 import com.sbs.data.AppSettingsManager;
 import com.sbs.data.SightingRecord;
-import com.sbs.data.SightingStore;
-import com.sbs.data.SightingSyncManager;
+import com.sbs.data.SyncState;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
-public class SightingsAdapter extends RecyclerView.Adapter<SightingsAdapter.SightingViewHolder> {
+public class SightingsAdapter extends ListAdapter<SightingRecord, SightingsAdapter.SightingViewHolder> {
 
-    private final List<SightingRecord> sightings = new ArrayList<>();
+    private static final DiffUtil.ItemCallback<SightingRecord> DIFF_CALLBACK =
+            new DiffUtil.ItemCallback<SightingRecord>() {
+                @Override
+                public boolean areItemsTheSame(@NonNull SightingRecord oldItem, @NonNull SightingRecord newItem) {
+                    return oldItem.localId.equals(newItem.localId);
+                }
+
+                @Override
+                public boolean areContentsTheSame(@NonNull SightingRecord oldItem, @NonNull SightingRecord newItem) {
+                    return oldItem.timestamp == newItem.timestamp
+                            && oldItem.lastSyncAttempt == newItem.lastSyncAttempt
+                            && oldItem.lat == newItem.lat
+                            && oldItem.lng == newItem.lng
+                            && oldItem.radius == newItem.radius
+                            && safeEquals(oldItem.title, newItem.title)
+                            && safeEquals(oldItem.notes, newItem.notes)
+                            && safeEquals(oldItem.syncStatus, newItem.syncStatus);
+                }
+            };
+
     private final AppSettingsManager appSettingsManager;
     private final SightingActionListener actionListener;
 
@@ -35,14 +53,9 @@ public class SightingsAdapter extends RecyclerView.Adapter<SightingsAdapter.Sigh
     }
 
     public SightingsAdapter(AppSettingsManager appSettingsManager, SightingActionListener actionListener) {
+        super(DIFF_CALLBACK);
         this.appSettingsManager = appSettingsManager;
         this.actionListener = actionListener;
-    }
-
-    public void submitList(List<SightingRecord> records) {
-        sightings.clear();
-        if (records != null) sightings.addAll(records);
-        notifyDataSetChanged();
     }
 
     @NonNull
@@ -54,11 +67,11 @@ public class SightingsAdapter extends RecyclerView.Adapter<SightingsAdapter.Sigh
 
     @Override
     public void onBindViewHolder(@NonNull SightingViewHolder holder, int position) {
-        holder.bind(sightings.get(position));
+        holder.bind(getItem(position));
     }
 
     @Override
-    public int getItemCount() { return sightings.size(); }
+    public int getItemCount() { return getCurrentList().size(); }
 
     class SightingViewHolder extends RecyclerView.ViewHolder {
         private final TextView tvTitle, tvAuthor, tvCoords, tvNotes, tvTimestamp, tvStatus;
@@ -92,7 +105,7 @@ public class SightingsAdapter extends RecyclerView.Adapter<SightingsAdapter.Sigh
 
             if (isAuthor) {
                 layoutActions.setVisibility(View.VISIBLE);
-                btnSyncNow.setVisibility(!SightingStore.STATUS_SYNCED.equals(record.syncStatus) 
+                btnSyncNow.setVisibility(!SyncState.SYNCED.equals(record.syncStatus)
                         && !appSettingsManager.isAutoSyncEnabled() ? View.VISIBLE : View.GONE);
                 
                 btnSyncNow.setOnClickListener(v -> actionListener.onSyncNow(record));
@@ -104,9 +117,13 @@ public class SightingsAdapter extends RecyclerView.Adapter<SightingsAdapter.Sigh
         }
 
         private String formatStatus(String status) {
-            if (SightingStore.STATUS_SYNCED.equals(status)) return "Synced";
-            if (SightingStore.STATUS_FAILED.equals(status)) return "Sync Failed";
+            if (SyncState.SYNCED.equals(status)) return "Synced";
+            if (SyncState.FAILED.equals(status)) return "Sync Failed";
             return "Not Synced";
         }
+    }
+
+    private static boolean safeEquals(String left, String right) {
+        return left == null ? right == null : left.equals(right);
     }
 }

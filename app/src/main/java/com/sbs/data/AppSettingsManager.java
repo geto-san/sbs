@@ -78,6 +78,14 @@ public class AppSettingsManager {
         prefs.edit().putString(KEY_SYNC_INTERVAL, interval).apply();
     }
 
+    public long getSyncIntervalMinutes() {
+        String interval = getSyncInterval();
+        if (SYNC_INTERVAL_15.equals(interval)) return 15L;
+        if (SYNC_INTERVAL_60.equals(interval)) return 60L;
+        if (SYNC_INTERVAL_MANUAL.equals(interval)) return 0L;
+        return 30L;
+    }
+
     public boolean isAutoCenterMapEnabled() {
         return prefs.getBoolean(KEY_AUTO_CENTER_MAP, true);
     }

@@ -18,10 +18,12 @@ import com.google.firebase.auth.FirebaseUser;
 import com.sbs.R;
 import com.sbs.data.AppSettingsManager;
 import com.sbs.data.SightingSyncManager;
+import com.sbs.data.SyncScheduler;
 
 public class SettingsActivity extends BaseActivity {
 
     private AutoCompleteTextView actThemeMode;
+    private AutoCompleteTextView actSyncInterval;
     private MaterialButtonToggleGroup toggleSyncMode;
     private SwitchMaterial switchWifiOnlySync;
     private SwitchMaterial switchAutoCenterMap;
@@ -43,13 +45,14 @@ public class SettingsActivity extends BaseActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
 
         actThemeMode = findViewById(R.id.actThemeMode);
+        actSyncInterval = findViewById(R.id.actSyncInterval);
         toggleSyncMode = findViewById(R.id.toggleSyncMode);
         switchWifiOnlySync = findViewById(R.id.switchWifiOnlySync);
         switchAutoCenterMap = findViewById(R.id.switchAutoCenterMap);
         switchShowSampleMarkers = findViewById(R.id.switchShowSampleMarkers);
         btnSyncNowGlobal = findViewById(R.id.btnSyncNowGlobal);
 
-        setupThemeDropdown();
+        setupDropdowns();
         bindSavedValues();
         bindSettingListeners();
         
@@ -59,16 +62,22 @@ public class SettingsActivity extends BaseActivity {
                 SightingSyncManager.syncAllPending(this);
                 Toast.makeText(this, "Syncing all records...", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No connection or WiFi required", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void setupThemeDropdown() {
+    private void setupDropdowns() {
         String[] themeOptions = {"System default", "Light", "Dark"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, themeOptions);
-        actThemeMode.setAdapter(adapter);
+        actThemeMode.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, themeOptions));
+
+        String[] intervalOptions = {
+                AppSettingsManager.SYNC_INTERVAL_15,
+                AppSettingsManager.SYNC_INTERVAL_30,
+                AppSettingsManager.SYNC_INTERVAL_60,
+                AppSettingsManager.SYNC_INTERVAL_MANUAL
+        };
+        actSyncInterval.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, intervalOptions));
     }
 
     private void bindSavedValues() {
@@ -84,15 +93,17 @@ public class SettingsActivity extends BaseActivity {
         String themeMode = appSettingsManager.getThemeMode();
         switch (themeMode) {
             case AppSettingsManager.THEME_LIGHT:
-                actThemeMode.setText(getString(R.string.light), false);
+                actThemeMode.setText("Light", false);
                 break;
             case AppSettingsManager.THEME_DARK:
-                actThemeMode.setText(getString(R.string.dark), false);
+                actThemeMode.setText("Dark", false);
                 break;
             default:
-                actThemeMode.setText(getString(R.string.system_default), false);
+                actThemeMode.setText("System default", false);
                 break;
         }
+
+        actSyncInterval.setText(appSettingsManager.getSyncInterval(), false);
         updateSyncUI();
     }
 
@@ -105,10 +116,16 @@ public class SettingsActivity extends BaseActivity {
             appSettingsManager.applyTheme();
         });
 
+        actSyncInterval.setOnItemClickListener((parent, view, position, id) -> {
+            appSettingsManager.setSyncInterval(actSyncInterval.getText().toString());
+            SyncScheduler.scheduleConfiguredSync(this);
+        });
+
         toggleSyncMode.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) return;
             boolean auto = checkedId == R.id.btnSyncAuto;
             appSettingsManager.setAutoSyncEnabled(auto);
+            SyncScheduler.scheduleConfiguredSync(this);
             updateSyncUI();
         });
 
@@ -127,6 +144,7 @@ public class SettingsActivity extends BaseActivity {
         btnSyncNowGlobal.setVisibility(autoSync ? View.GONE : View.VISIBLE);
         switchWifiOnlySync.setEnabled(autoSync);
         switchWifiOnlySync.setAlpha(autoSync ? 1f : 0.5f);
+        findViewById(R.id.tilSyncInterval).setVisibility(autoSync ? View.VISIBLE : View.GONE);
     }
 
     private void showDeleteAccountConfirmation() {

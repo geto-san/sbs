@@ -25,10 +25,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.sbs.R;
-import com.sbs.SessionManager;
+import com.sbs.data.AppRepository;
 import com.sbs.data.AppSettingsManager;
 import com.sbs.data.SightingRecord;
-import com.sbs.data.SightingStore;
 import com.sbs.databinding.ActivityDashboardBinding;
 import com.sbs.notifications.FcmTokenManager;
 
@@ -50,6 +49,7 @@ public class DashboardActivity extends BaseActivity {
     private boolean restoredMapState = false;
     private final List<Marker> savedSightingMarkers = new ArrayList<>();
     private boolean actionMenuOpen = false;
+    private AppRepository repository;
 
     private static final String PREFS_DASHBOARD_STATE = "sbs_dashboard_state";
     private static final String KEY_MAP_LAT = "map_lat";
@@ -84,9 +84,6 @@ public class DashboardActivity extends BaseActivity {
 
     private final ActivityResultLauncher<Intent> recordEditorLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    renderStoredSightings();
-                }
             });
 
     @Override
@@ -95,6 +92,7 @@ public class DashboardActivity extends BaseActivity {
         Configuration.getInstance().setUserAgentValue(getPackageName());
 
         appSettingsManager = new AppSettingsManager(this);
+        repository = AppRepository.getInstance(this);
         appSettingsManager.applyTheme();
 
         super.onCreate(savedInstanceState);
@@ -104,6 +102,7 @@ public class DashboardActivity extends BaseActivity {
 
         FcmTokenManager.syncCurrentToken(this);
         bindCurrentUserFooter();
+        repository.upsertCurrentRanger();
 
         int originalLeft = binding.sidePanel.getPaddingLeft();
         int originalTop = binding.sidePanel.getPaddingTop();
@@ -128,7 +127,7 @@ public class DashboardActivity extends BaseActivity {
 
         setupMap();
         setupMyLocationOverlay();
-        renderStoredSightings();
+        observeSightings();
 
         if (appSettingsManager.isShowSampleMarkersEnabled()) {
             loadSampleSightings();
@@ -180,7 +179,15 @@ public class DashboardActivity extends BaseActivity {
         if (intent == null) return;
         String alertType = intent.getStringExtra("alert_type");
         if (alertType == null) return;
-        Toast.makeText(this, "Notification: " + alertType, Toast.LENGTH_SHORT).show();
+        
+        // Improved type-based deep linking handling
+        if ("sighting".equals(alertType)) {
+            startActivity(new Intent(this, SightingsActivity.class));
+        } else if ("patrol_log".equals(alertType)) {
+            startActivity(new Intent(this, PatrolLogsActivity.class));
+        } else {
+            Toast.makeText(this, "Notification: " + alertType, Toast.LENGTH_SHORT).show();
+        }
         intent.removeExtra("alert_type");
     }
 
@@ -237,7 +244,6 @@ public class DashboardActivity extends BaseActivity {
     private void renderStoredSightings() {
         for (Marker marker : savedSightingMarkers) binding.mapView.getOverlays().remove(marker);
         savedSightingMarkers.clear();
-        for (SightingRecord record : SightingStore.getAll(this)) addSightingMarker(record);
         binding.mapView.invalidate();
     }
 
@@ -247,6 +253,12 @@ public class DashboardActivity extends BaseActivity {
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
         marker.setTitle(record.title);
         marker.setSubDescription(record.notes);
+        marker.setOnMarkerClickListener((m, mapView) -> {
+            Intent intent = new Intent(this, SightingEditorActivity.class);
+            intent.putExtra("sighting_id", record.localId);
+            recordEditorLauncher.launch(intent);
+            return true;
+        });
         savedSightingMarkers.add(marker);
         binding.mapView.getOverlays().add(marker);
     }
@@ -286,6 +298,10 @@ public class DashboardActivity extends BaseActivity {
         binding.btnMenuClose.setOnClickListener(v -> hideMenu());
         binding.btnMyLocation.setOnClickListener(v -> toggleActionMenu());
         binding.actionMenuScrim.setOnClickListener(v -> closeActionMenu());
+        binding.btnNotifications.setOnClickListener(v -> {
+            Toast.makeText(this, "No new alerts", Toast.LENGTH_SHORT).show();
+        });
+
         View.OnClickListener sightingClick = v -> {
             closeActionMenu();
             GeoPoint loc = resolveCurrentLocation();
@@ -313,7 +329,6 @@ public class DashboardActivity extends BaseActivity {
             startActivity(new Intent(this, SettingsActivity.class));
         });
         binding.tvLogout.setOnClickListener(v -> {
-            new SessionManager(this).logout();
             FirebaseAuth.getInstance().signOut();
             Intent intent = new Intent(this, LoginActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -369,7 +384,6 @@ public class DashboardActivity extends BaseActivity {
         super.onResume();
         binding.mapView.onResume();
         if (locationOverlay != null) locationOverlay.enableMyLocation();
-        renderStoredSightings();
     }
 
     @Override
@@ -398,6 +412,23 @@ public class DashboardActivity extends BaseActivity {
         binding.actionMenuContainer.setAlpha(0f);
         binding.actionMenuContainer.animate().alpha(1f).setDuration(160).start();
         binding.btnMyLocation.animate().rotation(45f).setDuration(160).start();
+    }
+
+    private void observeSightings() {
+        String rangerId = FirebaseAuth.getInstance().getUid();
+        if (rangerId == null) {
+            return;
+        }
+        repository.observeSightings(rangerId).observe(this, records -> {
+            renderStoredSightings();
+            if (records == null) {
+                return;
+            }
+            for (SightingRecord record : records) {
+                addSightingMarker(record);
+            }
+            binding.mapView.invalidate();
+        });
     }
 
     private void closeActionMenu() {

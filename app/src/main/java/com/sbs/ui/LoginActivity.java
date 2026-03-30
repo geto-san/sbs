@@ -23,6 +23,8 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.sbs.R;
+import com.sbs.data.AppRepository;
+import com.sbs.data.SyncScheduler;
 import com.sbs.databinding.ActivityLoginBinding;
 import com.sbs.notifications.FcmTokenManager;
 
@@ -99,6 +101,8 @@ public class LoginActivity extends BaseActivity {
                     binding.btnGetStarted.setEnabled(true);
 
                     if (task.isSuccessful()) {
+                        AppRepository.getInstance(this).upsertCurrentRanger();
+                        SyncScheduler.scheduleConfiguredSync(this);
                         Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
                         FcmTokenManager.syncCurrentToken(this);
                         Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
@@ -136,6 +140,8 @@ public class LoginActivity extends BaseActivity {
                         if (user != null) {
                             upsertUserProfile(user);
                         }
+                        AppRepository.getInstance(this).upsertCurrentRanger();
+                        SyncScheduler.scheduleConfiguredSync(this);
                         FcmTokenManager.syncCurrentToken(this);
                         Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

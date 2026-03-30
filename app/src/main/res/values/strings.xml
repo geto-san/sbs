@@ -21,6 +21,7 @@
     <string name="log_out">LOG OUT</string>
     <string name="sightings">SIGHTINGS</string>
     <string name="new_sighting">New Sighting</string>
+    <string name="edit_sighting">Edit Sighting</string>
     <string name="sighting_title">Sighting title</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
@@ -36,6 +37,12 @@
     <string name="system_default">System default</string>
     <string name="allowed_by_system_version">Allowed by system version</string>
     <string name="patrol_logs">PATROL LOGS</string>
+    <string name="new_patrol_log">New Patrol Log</string>
+    <string name="edit_patrol_log">Edit Patrol Log</string>
+    <string name="log_title">Log Title</string>
+    <string name="log_notes">Notes / Observations</string>
+    <string name="save_patrol_log">Save Patrol Log</string>
+    <string name="attachments">Attachments</string>
     <string name="manual">Manual</string>
     <string name="automatic">Automatic</string>
     <string name="media">Media</string>
@@ -54,4 +61,12 @@
     <string name="center_on_my_location">Center on my location</string>
     <string name="quick_actions">Quick actions</string>
     <string name="quick_actions_hint">Choose what you want to do next</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_mode">Theme mode</string>
+    <string name="sync_configuration">Sync configuration</string>
+    <string name="sync_interval">Sync interval</string>
+    <string name="sync_only_wifi">Sync only on Wi-Fi</string>
+    <string name="map_behavior">Map behavior</string>
+    <string name="center_map_on_location">Center map on current location</string>
+    <string name="show_sample_markers">Show sample markers on map</string>
 </resources>
