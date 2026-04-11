@@ -19,3 +19,4 @@ public final class SbsApplication extends Application {
         RealtimeSyncManager.getInstance(this).start();
     }
 }
+
